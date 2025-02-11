@@ -1,7 +1,7 @@
 const axios = require('axios');
 require('dotenv').config('./.env')
 
-const repo = 'PssbleTrngle/VersionManagment';
+const repo = 'flyinghail/next-version-action';
 const event_type = process.argv[2]
 const client_payload = { fragment: process.argv[3], type: process.argv[4] };
 
