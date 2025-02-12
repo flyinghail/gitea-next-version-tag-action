@@ -25,7 +25,7 @@ function getFragments() {
 }
 
 export async function getTags() {
-    await exec(`git`, [`fetch`, `--tags`])
+    // await exec(`git`, [`fetch`, `--tags`])
     const output = await getExecOutput(`git`, [`tag`, `-l`])
 
     if (output.exitCode != 0) {
