@@ -36,13 +36,9 @@ function getGiteaApi() {
 }
 
 export async function findLastVersion(api: Api<unknown>, prefix: string) {
-    let {owner, repo} = github.context.repo
+    const {owner, repo} = github.context.repo
     console.log("Owner", owner)
     console.log("Repo", repo)
-
-    if (repo.startsWith(`${owner}/`)) {
-        repo = repo.split('/')[1]
-    }
 
     let page = 1
 
@@ -137,10 +133,7 @@ async function getLastVersion(api: Api<unknown>, prefix: string) {
 }
 
 async function createTag(api: Api<unknown>, tag: string) {
-    let {owner, repo} = github.context.repo
-    if (repo.startsWith(`${owner}/`)) {
-        repo = repo.split('/')[1]
-    }
+    const {owner, repo} = github.context.repo
 
     console.log("Creating tag", tag)
     await api.repos.repoCreateTag(owner, repo, {

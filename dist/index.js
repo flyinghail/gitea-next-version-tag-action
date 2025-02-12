@@ -40886,12 +40886,9 @@ function getGiteaApi() {
     });
 }
 async function findLastVersion(api, prefix) {
-    let { owner, repo } = github.context.repo;
+    const { owner, repo } = github.context.repo;
     console.log("Owner", owner);
     console.log("Repo", repo);
-    if (repo.startsWith(`${owner}/`)) {
-        repo = repo.split('/')[1];
-    }
     let page = 1;
     while (true) {
         const { data } = await api.repos.repoListTags(owner, repo, { page, limit: 50 });
@@ -40970,10 +40967,7 @@ async function getLastVersion(api, prefix) {
     return findLastVersion(api, prefix);
 }
 async function createTag(api, tag) {
-    let { owner, repo } = github.context.repo;
-    if (repo.startsWith(`${owner}/`)) {
-        repo = repo.split('/')[1];
-    }
+    const { owner, repo } = github.context.repo;
     console.log("Creating tag", tag);
     await api.repos.repoCreateTag(owner, repo, {
         tag_name: tag,
