@@ -34462,7 +34462,7 @@ function getFragments() {
     return [getMajorLabel(), getMinorLabel(), getPatchLabel()];
 }
 async function getTags() {
-    await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_2__.exec)(`git`, [`fetch`, `--tags`]);
+    // await exec(`git`, [`fetch`, `--tags`])
     const output = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_2__.getExecOutput)(`git`, [`tag`, `-l`]);
     if (output.exitCode != 0) {
         console.log(`Fetch tags failed, ${output.stderr}`);
