@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import {exec, getExecOutput} from "@actions/exec";
 import * as semver from "semver";
+import { giteaApi, type Api } from "gitea-js"
 import type { PullRequestEvent } from "@octokit/webhooks-types";
 
 function versionPrefix() {
@@ -20,60 +20,68 @@ function getPatchLabel() {
     return core.getInput('patch-label') || 'patch'
 }
 
+function getIgnoreLabels() {
+    return core.getInput('ignore-labels') || 'no-version'
+}
+
 function getFragments() {
-    return [getMajorLabel(), getMinorLabel(), getPatchLabel()]
+    return [getIgnoreLabels(), getMajorLabel(), getMinorLabel(), getPatchLabel()]
 }
 
-export async function getTags() {
-    // await exec(`git`, [`fetch`, `--tags`])
-    const output = await getExecOutput(`git`, [`tag`, `-l`])
+function getGiteaApi() {
+    console.log("Server url", github.context.serverUrl)
+    return giteaApi(github.context.serverUrl, {
+        token: core.getInput('gitea-token'), // generate one at https://gitea.example.com/user/settings/applications
+    });
+}
 
-    if (output.exitCode != 0) {
-        console.log(`Fetch tags failed, ${output.stderr}`);
-        throw new Error(`No tags found, ${output.stderr}`);
+export async function findLastVersion(api: Api<unknown>, prefix: string) {
+    let {owner, repo} = github.context.repo
+    console.log("Owner", owner)
+    console.log("Repo", repo)
+
+    if (repo.startsWith(`${owner}/`)) {
+        repo = repo.split('/')[1]
+    }
+
+    let page = 1
+
+    while (true) {
+        const {data} = await api.repos.repoListTags(owner, repo, {page, limit: 50})
+        if (data.length === 0) {
+            break
+        }
+
+        for (const k in data) {
+            const tag = data[k]
+            if (tag.name) {
+                const version = getSemverVersion(prefix, tag.name)
+                if (version) {
+                    console.log(`Found tag ${tag.name}`)
+                    return version
+                }
+            }
+        }
+
+        page++
     }
 
 
-    return output.stdout.split(`\n`);
+    const fallback = semver.clean(core.getInput('fallback')) || '0.0.0'
+    console.log(`No tags found, using ${fallback}`);
+    return fallback;
 }
 
-function getSemverVersion(tag: string) {
-    const prefix = versionPrefix()
-
+function getSemverVersion(prefix: string, tag: string) {
     if (tag.startsWith(prefix)) {
-        tag = tag.substring(prefix.length);
-    }
-
-    const semverVer = semver.clean(tag)
-    if (semverVer && !semverVer.includes('-')) {
-        return semverVer
+        tag = tag.substring(prefix.length)
+        const version = semver.clean(tag)
+        if (version && !version.includes('-')) {
+            return version
+        }
     }
 
     return null
-}
-
-async function findLastVersion() {
-    const tags = await getTags();
-
-    const semverTags: string[] = []
-    if (tags.length > 0) {
-        tags.forEach(tag => {
-            const semverTag = getSemverVersion(tag)
-            if (semverTag) {
-                semverTags.push(semverTag)
-            }
-        })
-    }
-
-    if (!semverTags || semverTags.length === 0) {
-        const fallback = semver.clean(core.getInput('fallback')) || '0.0.0'
-        console.log(`No tags found, using ${fallback}`);
-        return fallback;
-    }
-
-    // Filter out all the prerelease tags and sort them
-    semverTags.sort(semver.compare);
-    return semverTags[semverTags.length - 1]
 }
 
 function increment(version: string, by: string) {
@@ -119,28 +127,52 @@ function findFragment() {
         .reverse()[0]
 }
 
-async function getLastVersion() {
+async function getLastVersion(api: Api<unknown>, prefix: string) {
     const input = core.getInput('last-version');
     if(input) {
-        return getSemverVersion(input);
+        return getSemverVersion(prefix, input);
     }
 
-    return findLastVersion();
+    return findLastVersion(api, prefix);
+}
+
+async function createTag(api: Api<unknown>, tag: string) {
+    let {owner, repo} = github.context.repo
+    if (repo.startsWith(`${owner}/`)) {
+        repo = repo.split('/')[1]
+    }
+
+    console.log("Creating tag", tag)
+    await api.repos.repoCreateTag(owner, repo, {
+        tag_name: tag,
+        message: "",
+        target: github.context.sha,
+    })
 }
 
 async function run() {
-    const lastVersion = await getLastVersion()
+    const prefix = versionPrefix()
+    const giteaApi = getGiteaApi()
+
+    const lastVersion = await getLastVersion(giteaApi, prefix)
 
     let next = ''
     if (lastVersion) {
         const fragment = findFragment() || getPatchLabel()
         console.log('Using version fragment', fragment)
-        console.log('Found last version', lastVersion)
-        next = increment(lastVersion, fragment)
+        if (fragment !== getIgnoreLabels()) {
+            console.log('Found last version', lastVersion)
+            next = increment(lastVersion, fragment)
+        }
     }
 
-    const prefix = versionPrefix()
-    core.setOutput('next', `${prefix}${next}`)
+    let nextTag = ''
+    if (next) {
+        nextTag = `${prefix}${next}`
+        await createTag(giteaApi, nextTag)
+    }
+
+    core.setOutput('next', nextTag)
     core.setOutput("latest", `${prefix}${lastVersion}`)
 }
 

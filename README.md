@@ -1,5 +1,7 @@
-# Version Managment
-Fetch latest version from tags and increment it based on pull request labels.
+# Gitea Next Version Tag
+Create the next version tag based on the latest tag.
+
+**only use for Gitea action**
 
 Increments based on the given fragment.
 
@@ -17,21 +19,30 @@ If triggered on `repository_dispatch`, a fragment can be specified in the `clien
 
 ## Inputs
 
-### `token`
-**Required** The github token.
+### `gitea-token`
+**Required** The Gitea token.
 
 ### `fallback`
-The version used if none is found. Default `"$prefix1.0.0"`.
+The version used if none is found, not include `$prefix`. Default `"0.0.0"`.
 
 ### `last-version`
 Custom version to use instead of searching in the tags.
 
 ### `prefix`
-Prefix in front of version. Default `""`.
+Prefix in front of version. Default `"v"`.
 Example Prefix `"v"` -> Version `"v0.1.0"`
 
-### `default-fragment`
-Default increment fragment if none is found in `pull_request.labels` or `client_payload`. Default `"bug"`.
+### `major-label`
+Label to use for increment the major version. Default `"major"`.
+
+### `minor-label`
+Label to use for increment the minor version. Default `"minor"`.
+
+### `patch-label`
+Label to use for increment the patch version. Default `"patch"`.
+
+### `ignore-label`
+Label to ignore the version increment. Default `"no-version"`.
 
 ## Outputs
 
@@ -39,17 +50,16 @@ Default increment fragment if none is found in `pull_request.labels` or `client_
 
 The incremented version
 
-### `type`
+### `latest`
 
-The release type found in labels. Possibilities are `alpha` and `beta`. Falls back to `release`
+The latest version
 
 ## Example usage
 
 ```yml
-- uses: PssbleTrngle/VersionManagment@v2
+- uses: flyinghail/gitea-next-version-tag@v1.0.0
   id: version
   with:
-      token: ${{secrets.GITHUB_TOKEN}}
-      fallback: v0.1.0
-      prefix: v
+      gitea-token: ${{secrets.GITHUB_TOKEN}}
+      fallback: v0.0.0
 ```
