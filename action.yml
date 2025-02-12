@@ -1,6 +1,9 @@
-name: Increment Version
-description: Fetch latest version from tags and increment it based on pull request labels
+name: Gitea Next Version Tag
+description: Create the next version tag based on the latest tag
 inputs:
+  gitea-token:
+    description: The Gitea token
+    required: true
   last-version: 
     description: Provide a custom last version instead of fetching it from the tags
     required: false
@@ -24,6 +27,10 @@ inputs:
     description: The label used to increment the patch version, defaults to patch
     required: false
     default: patch
+  ignore-label:
+    description: The label used to ignore the version increment, defaults to no-version
+    required: false
+    default: no-version
 outputs:
   next:
     description: The incremented version
