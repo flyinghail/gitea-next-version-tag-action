@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/flyinghail/gitea-next-version-tag.git"
+    "url": "git+https://github.com/flyinghail/gitea-next-version-tag-action.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/flyinghail/gitea-next-version-tag/issues"
+    "url": "https://github.com/flyinghail/gitea-next-version-tag-action/issues"
   },
-  "homepage": "https://github.com/flyinghail/gitea-next-version-tag#readme",
+  "homepage": "https://github.com/flyinghail/gitea-next-version-tag-action#readme",
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
