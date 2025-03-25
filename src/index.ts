@@ -20,12 +20,8 @@ function getPatchLabel() {
     return core.getInput('patch-label') || 'patch'
 }
 
-function getIgnoreLabels() {
-    return core.getInput('ignore-labels') || 'no-version'
-}
-
 function getFragments() {
-    return [getIgnoreLabels(), getMajorLabel(), getMinorLabel(), getPatchLabel()]
+    return [getMajorLabel(), getMinorLabel(), getPatchLabel()]
 }
 
 function getGiteaApi() {
@@ -115,12 +111,17 @@ function getLabels(): string[] {
 }
 
 function findFragment() {
-    const labels = getLabels();
     const fragments = getFragments()
-    return labels
+    const labels = getLabels()
         .filter(l => fragments.includes(l))
         .sort(l => fragments.indexOf(l))
-        .reverse()[0]
+        .reverse()
+
+    if (labels.length > 0) {
+        return labels[0]
+    }
+
+    return null
 }
 
 async function getLastVersion(api: Api<unknown>, prefix: string) {
@@ -149,20 +150,19 @@ async function run() {
 
     const lastVersion = await getLastVersion(giteaApi, prefix)
 
-    let next = ''
+    let nextTag = ""
     if (lastVersion) {
-        const fragment = findFragment() || getPatchLabel()
-        console.log('Using version fragment', fragment)
-        if (fragment !== getIgnoreLabels()) {
-            console.log('Found last version', lastVersion)
-            next = increment(lastVersion, fragment)
-        }
-    }
+        console.log('Found last version', lastVersion)
 
-    let nextTag = ''
-    if (next) {
-        nextTag = `${prefix}${next}`
-        await createTag(giteaApi, nextTag)
+        const fragment = findFragment()
+        if (fragment !== null) {
+            console.log('Using version fragment', fragment)
+
+            const next = increment(lastVersion, fragment)
+
+            nextTag = `${prefix}${next}`
+            await createTag(giteaApi, nextTag)
+        }
     }
 
     core.setOutput('next', nextTag)

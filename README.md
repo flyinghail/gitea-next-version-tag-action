@@ -41,9 +41,6 @@ Label to use for increment the minor version. Default `"minor"`.
 ### `patch-label`
 Label to use for increment the patch version. Default `"patch"`.
 
-### `ignore-label`
-Label to ignore the version increment. Default `"no-version"`.
-
 ## Outputs
 
 ### `next`
